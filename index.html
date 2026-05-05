@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SiegePrep</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+    :root {
+      --bg: #080c10;
+      --fortress-glow: #00ff88;
+      --red-hot: #ff2020;
+      --red-dark: #8b0000;
+      --gray-unit: #555;
+      --defeated: #1a1a1a;
+      --bar-bg: rgba(0, 255, 136, 0.07);
+      --bar-border: rgba(0, 255, 136, 0.2);
+      --popup-bg: #0d1520;
+      --popup-border: rgba(0, 255, 136, 0.35);
+      --text: #c8ffd4;
+      --mono: 'Share Tech Mono', monospace;
+      --display: 'Orbitron', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    /* ── TOP BAR ─────────────────────────────────────── */
+    #topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: var(--bar-bg);
+      border-bottom: 1px solid var(--bar-border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 24px;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+    }
+
+    #topbar .title {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--fortress-glow);
+      letter-spacing: 3px;
+      text-shadow: 0 0 12px var(--fortress-glow);
+      white-space: nowrap;
+    }
+
+    #topbar .divider {
+      width: 1px;
+      height: 24px;
+      background: var(--bar-border);
+    }
+
+    #topbar .info {
+      font-size: 11px;
+      color: #7ab;
+      letter-spacing: 1px;
+    }
+
+    #topbar .info span {
+      color: var(--text);
+      font-weight: bold;
+    }
+
+    #hp-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    #hp-bar .label {
+      color: #7ab;
+      letter-spacing: 1px;
+    }
+
+    #hp-track {
+      width: 80px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88, #00cc66);
+      transition: width 0.4s, background 0.4s;
+      border-radius: 2px;
+    }
+
+    #hp-value {
+      font-size: 11px;
+      min-width: 28px;
+      color: var(--fortress-glow);
+      font-weight: bold;
+    }
+
+    #topbar .spacer {
+      flex: 1;
+    }
+
+    #topbar .remaining {
+      font-size: 11px;
+      color: #7ab;
+      letter-spacing: 1px;
+    }
+
+    #btn-new-test {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--fortress-glow);
+      background: transparent;
+      border: 1px solid rgba(0, 255, 136, 0.4);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    #btn-new-test:hover {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--fortress-glow);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    }
+
+    #topbar button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #topbar button:disabled:hover {
+      background: transparent;
+      border-color: rgba(0, 255, 136, 0.4);
+      box-shadow: none;
+    }
+
+    #btn-delete-test {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--red-hot);
+      background: transparent;
+      border: 1px solid rgba(255, 32, 32, 0.4);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    #btn-delete-test:hover {
+      background: rgba(255, 32, 32, 0.1);
+      border-color: var(--red-hot);
+      box-shadow: 0 0 10px rgba(255, 32, 32, 0.2);
+    }
+
+    #btn-delete-test:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #btn-delete-test:disabled:hover {
+      background: transparent;
+      border-color: rgba(255, 32, 32, 0.4);
+      box-shadow: none;
+    }
+
+    /* ── BATTLEFIELD ─────────────────────────────────── */
+    #battlefield {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    /* ── FORTRESS ────────────────────────────────────── */
+    #fortress {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 2px solid var(--fortress-glow);
+      box-shadow:
+        0 0 20px rgba(0, 255, 136, 0.4),
+        0 0 60px rgba(0, 255, 136, 0.12),
+        inset 0 0 30px rgba(0, 255, 136, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 10;
+      animation: fortress-pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes fortress-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 60px rgba(0, 255, 136, 0.12), inset 0 0 30px rgba(0, 255, 136, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.6), 0 0 90px rgba(0, 255, 136, 0.18), inset 0 0 40px rgba(0, 255, 136, 0.1);
+      }
+    }
+
+    #fortress .fort-label {
+      font-family: var(--display);
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--fortress-glow);
+      text-shadow: 0 0 8px var(--fortress-glow);
+    }
+
+    #fortress .fort-icon {
+      font-size: 32px;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px var(--fortress-glow));
+    }
+
+    /* Scanline overlay on fortress */
+    #fortress::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 3px,
+          rgba(0, 255, 136, 0.02) 3px,
+          rgba(0, 255, 136, 0.02) 4px);
+      pointer-events: none;
+    }
+
+    /* Radar Sweep */
+    /* #radar-sweep {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 180px;
+      height: 180px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 9;
+      animation: radar-spin 4s linear infinite;
+    } */
+
+
+    /* STRAIGHT LINE */
+    /* #radar-sweep::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+
+      width: 2px;
+      height: 90px;
+
+      background: linear-gradient(to top,
+          rgba(0, 255, 136, 0.8),
+          rgba(0, 255, 136, 0));
+
+      transform-origin: bottom center;
+      transform: translate(-50%, -100%);
+    } */
+
+    /* @keyframes radar-spin {
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    } */
+
+    /* ── ENEMY UNIT WRAPPER ──────────────────────────── */
+    .unit-wrapper {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      z-index: 20;
+      transform-origin: center center;
+    }
+
+    .unit-wrapper:hover .unit-shape {
+      filter: brightness(1.4);
+    }
+
+    .unit-label {
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #aaa;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+      pointer-events: none;
+    }
+
+    /* ── SHAPES ──────────────────────────────────────── */
+    .unit-shape {
+      position: relative;
+      transition: filter 0.2s;
+      pointer-events: none;
+    }
+
+    /* TROOP — 6 dots in 3 rows × 2 columns */
+    .shape-troop {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 3px;
+      width: 18px;
+      height: 18px;
+      background: transparent !important;
+    }
+
+    .shape-troop span {
+      border-radius: 50px;
+      width: 6px;
+      height: 6px;
+      background: currentColor;
+    }
+
+    /* TANK — rectangle + barrel */
+    .shape-tank {
+      width: 22px;
+      height: 14px;
+      border-radius: 2px;
+      position: relative;
+    }
+
+    .shape-tank::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -10px;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+      background: inherit;
+    }
+
+    /* BOMBER — triangle (CSS clip) */
+    .shape-bomber {
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 26px solid currentColor;
+      background: transparent !important;
+      filter: none;
+    }
+
+    /* SHIP — rectangle + triangle front */
+    .shape-ship {
+      width: 28px;
+      height: 14px;
+      position: relative;
+      border-radius: 2px 0 0 2px;
+    }
+
+    .shape-ship::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -10px;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      background: transparent !important;
+    }
+
+    /* STATE COLORS */
+    .state-unseen .unit-shape,
+    .state-unseen .shape-bomber,
+    .state-unseen .shape-ship {
+      background-color: var(--gray-unit);
+      color: var(--gray-unit);
+    }
+
+    .state-unseen .shape-bomber {
+      border-bottom-color: var(--gray-unit) !important;
+    }
+
+    .state-unseen .shape-ship::after {
+      border-left-color: var(--gray-unit);
+    }
+
+    .state-engaged .unit-shape {
+      background-color: var(--red-hot);
+      color: var(--red-hot);
+    }
+
+    .state-engaged .shape-bomber {
+      border-bottom-color: var(--red-hot) !important;
+    }
+
+    .state-engaged .shape-ship::after {
+      border-left-color: var(--red-hot);
+    }
+
+    .state-engaged .unit-label {
+      color: #ff6666;
+    }
+
+    .state-engaged .unit-shape {
+      animation: pulse-unit 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-unit {
+      from {
+        filter: brightness(1) drop-shadow(0 0 4px var(--red-hot));
+      }
+
+      to {
+        filter: brightness(1.6) drop-shadow(0 0 10px var(--red-hot));
+      }
+    }
+
+    .state-damaged .unit-shape {
+      background-color: var(--red-dark);
+      color: var(--red-dark);
+    }
+
+    .state-damaged .shape-bomber {
+      border-bottom-color: var(--red-dark) !important;
+    }
+
+    .state-damaged .shape-ship::after {
+      border-left-color: var(--red-dark);
+    }
+
+    .state-damaged .unit-label {
+      color: #cc4444;
+    }
+
+    .state-damaged .unit-shape {
+      animation: flicker 1.4s linear infinite;
+    }
+
+    @keyframes flicker {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      47% {
+        opacity: 1;
+      }
+
+      48% {
+        opacity: 0.3;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      85% {
+        opacity: 1;
+      }
+
+      86% {
+        opacity: 0.2;
+      }
+
+      88% {
+        opacity: 1;
+      }
+    }
+
+    .state-defeated .unit-shape,
+    .state-defeated .unit-shape::after {
+      background-color: #555 !important;
+      color: #555 !important;
+    }
+
+    .state-defeated .shape-troop::after {
+      background-color: transparent !important;
+    }
+
+    .state-defeated .shape-troop::after span {
+      background-color: #555 !important;
+    }
+
+    .state-defeated .shape-bomber {
+      border-bottom-color: #555 !important;
+    }
+
+    .state-defeated .shape-ship::after {
+      border-left-color: #555;
+    }
+
+    .state-defeated {
+      opacity: 0.3;
+    }
+
+    .state-defeated .unit-label {
+      color: #888;
+    }
+
+    /* ── POPUP ───────────────────────────────────────── */
+    #popup {
+      position: fixed;
+      z-index: 200;
+      background: var(--popup-bg);
+      border: 1px solid var(--popup-border);
+      box-shadow: 0 0 24px rgba(0, 255, 136, 0.15), 0 4px 32px rgba(0, 0, 0, 0.6);
+      padding: 14px 16px;
+      min-width: 180px;
+      pointer-events: all;
+      animation: popup-in 0.15s ease-out;
+    }
+
+    @keyframes popup-in {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    #popup.hidden {
+      display: none;
+    }
+
+    #popup .pop-name {
+      font-family: var(--display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--fortress-glow);
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    #popup .pop-difficulty {
+      font-size: 9px;
+      color: #aaa;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    #popup .pop-state {
+      font-size: 10px;
+      color: #7ab;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    #popup .pop-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    #popup .pop-btns button {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+
+    #popup .pop-btns button:hover {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: rgba(0, 255, 136, 0.4);
+      color: var(--fortress-glow);
+    }
+
+    #popup .pop-btns button.btn-delete:hover {
+      background: rgba(255, 32, 32, 0.15);
+      border-color: rgba(255, 32, 32, 0.4);
+      color: #ff6666;
+    }
+
+    /* ── CONFIRM OVERLAY ─────────────────────────────── */
+    #confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #confirm-overlay.hidden {
+      display: none;
+    }
+
+    #confirm-box {
+      background: #0d1520;
+      border: 1px solid var(--popup-border);
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.15);
+      padding: 28px 32px;
+      max-width: 340px;
+      text-align: center;
+    }
+
+    #confirm-box .confirm-q {
+      font-family: var(--display);
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    #confirm-box .confirm-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    #confirm-box .confirm-btns button {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding: 8px 20px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.2s;
+    }
+
+    #btn-confirm-yes {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--fortress-glow) !important;
+      color: var(--fortress-glow);
+    }
+
+    #btn-confirm-yes:hover {
+      background: rgba(0, 255, 136, 0.25);
+    }
+
+    #btn-confirm-no {
+      background: rgba(255, 32, 32, 0.1);
+      border-color: var(--red-hot) !important;
+      color: var(--red-hot);
+    }
+
+    #btn-confirm-no:hover {
+      background: rgba(255, 32, 32, 0.2);
+    }
+
+    /* ── MODAL (new test) ────────────────────────────── */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modal-overlay.hidden {
+      display: none;
+    }
+
+    #modal-box {
+      background: #0d1520;
+      border: 1px solid var(--popup-border);
+      box-shadow: 0 0 50px rgba(0, 255, 136, 0.12);
+      padding: 28px 30px;
+      width: 420px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    #modal-box h2 {
+      font-family: var(--display);
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: var(--fortress-glow);
+      text-shadow: 0 0 10px var(--fortress-glow);
+    }
+
+    #modal-box label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: #7ab;
+      text-transform: uppercase;
+    }
+
+    #modal-box input,
+    #modal-box textarea {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: rgba(0, 255, 136, 0.04);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      color: var(--text);
+      padding: 8px 10px;
+      outline: none;
+      resize: vertical;
+      width: 100%;
+    }
+
+    #modal-box input:focus,
+    #modal-box textarea:focus {
+      border-color: rgba(0, 255, 136, 0.5);
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.1);
+    }
+
+    #modal-box .hint {
+      font-size: 9px;
+      color: #445;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+    }
+
+    #modal-box .modal-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    #modal-box .modal-btns button {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding: 8px 18px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.2s;
+    }
+
+    #btn-modal-cancel {
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      color: #7ab;
+    }
+
+    #btn-modal-ok {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--fortress-glow) !important;
+      color: var(--fortress-glow);
+    }
+
+    #btn-modal-ok:hover {
+      background: rgba(0, 255, 136, 0.22);
+    }
+
+    /* ── WARNING BANNER ──────────────────────────────── */
+    #warning-banner {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      right: 0;
+      background: rgba(255, 0, 0, 0.12);
+      border-bottom: 1px solid rgba(255, 0, 0, 0.3);
+      padding: 6px;
+      text-align: center;
+      font-family: var(--display);
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #ff4444;
+      text-shadow: 0 0 10px #ff0000;
+      z-index: 90;
+      animation: warn-flash 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes warn-flash {
+      from {
+        opacity: 0.7;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    #warning-banner.hidden {
+      display: none;
+    }
+
+    /* ── EMPTY STATE ─────────────────────────────────── */
+    #empty-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      margin-top: 130px;
+    }
+
+    #empty-state.hidden {
+      display: none;
+    }
+
+    #empty-state p {
+      font-family: var(--display);
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: rgba(0, 255, 136, 0.337);
+      margin-top: 12px;
+    }
+
+    /* ── RANGE RINGS ─────────────────────────────────── */
+    .range-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      border-radius: 50%;
+      border: 1px dashed rgba(0, 255, 136, 0.05);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      width: 200px !important;
+      height: 200px !important;
+    }
+
+    /* ── VICTORY OVERLAY ─────────────────────────────── */
+    #victory-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 250;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    #victory-overlay.hidden {
+      display: none;
+    }
+
+    #victory-box {
+      font-family: var(--display);
+      font-size: 48px;
+      letter-spacing: 4px;
+      color: #00ff00;
+      text-shadow: 0 0 40px #00ff00, 0 0 80px #00aa00;
+      text-align: center;
+      animation: victory-glow 1.2s ease-in-out infinite;
+    }
+
+    @keyframes victory-glow {
+
+      0%,
+      100% {
+        opacity: 0.7;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+    }
+
+    #popup .pop-btns button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: rgba(255, 255, 255, 0.02) !important;
+    }
+
+    #popup .pop-btns button:disabled:hover {
+      background: rgba(255, 255, 255, 0.02) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      color: #555 !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="title">SIEGE PREP</div>
+    <div class="divider"></div>
+    <div class="info">TEST: <span id="test-name-display">—</span></div>
+    <div class="divider"></div>
+    <div id="hp-bar">
+      <div class="label">HP</div>
+      <div id="hp-track">
+        <div id="hp-fill" style="width:100%"></div>
+      </div>
+      <div id="hp-value">100</div>
+    </div>
+    <div class="divider"></div>
+    <div class="remaining">ENEMIES: <span id="remaining-count">0</span></div>
+    <div class="spacer"></div>
+    <button id="btn-delete-test" disabled>✕ DELETE TEST</button>
+    <button id="btn-new-test">⊕ NEW TEST</button>
+  </div>
+
+  <!-- WARNING BANNER -->
+  <div id="warning-banner" class="hidden">⚠ YOU ARE UNDERPREPARED ⚠</div>
+
+  <!-- BATTLEFIELD -->
+  <div id="battlefield">
+    <!-- Range rings -->
+    <div class="range-ring" style="width:200px;height:200px;"></div>
+    <div class="range-ring" style="width:440px;height:440px;"></div>
+    <div class="range-ring" style="width:620px;height:620px;"></div>
+
+    <!-- Radar sweep inside fortress -->
+    <div id="radar-sweep"></div>
+
+    <!-- Fortress -->
+    <div id="fortress">
+      <div class="fort-icon">🏰</div>
+      <div class="fort-label">FORTRESS</div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state">
+      <p>NO ENEMIES DETECTED</p>
+      <p style="margin-top:6px;font-size:9px;color:rgba(0,255,136,0.15);">CREATE A NEW TEST TO BEGIN</p>
+    </div>
+  </div>
+
+  <!-- POPUP -->
+  <div id="popup" class="hidden">
+    <div class="pop-name" id="pop-name"></div>
+    <div class="pop-difficulty" id="pop-difficulty"></div>
+    <div class="pop-state" id="pop-state"></div>
+    <div class="pop-btns">
+      <button id="btn-start-study" disabled>▶ Start Study</button>
+      <button id="btn-mark-study" disabled>✓ Mark Studied</button>
+      <button id="btn-tested" disabled>⚡ Tested</button>
+      <button id="btn-retreat" disabled>↩ Retreat</button>
+      <button id="btn-delete" class="btn-delete" disabled>✕ Delete</button>
+    </div>
+  </div>
+
+  <!-- VICTORY OVERLAY -->
+  <div id="victory-overlay" class="hidden">
+    <div id="victory-box">ALL TARGETS ELIMINATED</div>
+  </div>
+
+  <!-- CONFIRM OVERLAY -->
+  <div id="confirm-overlay" class="hidden">
+    <div id="confirm-box">
+      <div class="confirm-q" id="confirm-message">Did you solve it<br>without help?</div>
+      <div class="confirm-btns">
+        <button id="btn-confirm-yes">YES</button>
+        <button id="btn-confirm-no">NO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW TEST MODAL -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-box">
+      <h2>NEW TEST</h2>
+      <div>
+        <label>Test Name</label>
+        <input type="text" id="modal-test-name" placeholder="e.g. Python Exam 1" />
+      </div>
+      <div>
+        <label>Topics (one per line)</label>
+        <textarea id="modal-topics" rows="8"
+          placeholder="Generators - Hard&#10;OOP - Medium&#10;MRO - Very Hard&#10;Recursion - Easy"></textarea>
+        <div class="hint">Format: Topic Name - Difficulty<br>Difficulties: Easy | Medium | Hard | Very Hard</div>
+      </div>
+      <div class="modal-btns">
+        <button id="btn-modal-cancel">Cancel</button>
+        <button id="btn-modal-ok">DEPLOY</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── AUDIO ────────────────────────────────────────────────────────────────────
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let lastSound = 0;
+
+    function getCtx() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      return audioCtx;
+    }
+
+    function playBeep(freq = 440, dur = 0.12, type = 'square') {
+      const now = Date.now();
+      if (now - lastSound < 80) return;
+      lastSound = now;
+      try {
+        const ctx = getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = type; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        osc.start(); osc.stop(ctx.currentTime + dur);
+      } catch (e) { }
+    }
+
+    function playVictory() {
+      try {
+        const ctx = getCtx();
+        [523, 659, 784, 1047].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'triangle'; osc.frequency.value = f;
+          const t = ctx.currentTime + i * 0.12;
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+          osc.start(t); osc.stop(t + 0.25);
+        });
+      } catch (e) { }
+    }
+
+    function playWarning() {
+      try {
+        const ctx = getCtx();
+        [200, 180].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sawtooth'; osc.frequency.value = f;
+          const t = ctx.currentTime + i * 0.15;
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          osc.start(t); osc.stop(t + 0.2);
+        });
+      } catch (e) { }
+    }
+
+    // ─── DATA ─────────────────────────────────────────────────────────────────────
+    let state = { tests: [], activeTestIndex: -1, hp: 100 };
+    let activeTopicId = null;
+
+    const DIFFICULTY_DISTANCE = { 'Easy': 380, 'Medium': 300, 'Hard': 220, 'Very Hard': 160 };
+    const DIFFICULTY_SHAPE = { 'Easy': 'troop', 'Medium': 'tank', 'Hard': 'bomber', 'Very Hard': 'ship' };
+
+    function saveData() {
+      localStorage.setItem('study_battlefield', JSON.stringify(state));
+    }
+
+    function loadData() {
+      const raw = localStorage.getItem('study_battlefield');
+      if (raw) {
+        try { state = JSON.parse(raw); } catch (e) { }
+      }
+      if (typeof state.hp !== 'number') state.hp = 100;
+    }
+
+    function activeTest() {
+      return state.tests[state.activeTestIndex] || null;
+    }
+
+    // ─── RENDER ───────────────────────────────────────────────────────────────────
+    function renderBattlefield() {
+      renderTopBar();
+      renderUnits();
+    }
+
+    function renderTopBar() {
+      const test = activeTest();
+      document.getElementById('test-name-display').textContent = test ? test.name : '—';
+      const hp = Math.max(0, state.hp);
+      document.getElementById('hp-value').textContent = hp;
+      document.getElementById('hp-fill').style.width = hp + '%';
+      document.getElementById('hp-fill').style.background =
+        hp > 60 ? 'linear-gradient(90deg,#00ff88,#00cc66)' :
+          hp > 30 ? 'linear-gradient(90deg,#ffaa00,#cc8800)' :
+            'linear-gradient(90deg,#ff2020,#cc0000)';
+
+      const remaining = test ? test.topics.filter(t => t.state !== 'defeated').length : 0;
+      document.getElementById('remaining-count').textContent = remaining;
+
+      const warned = hp <= 0;
+      document.getElementById('warning-banner').classList.toggle('hidden', !warned);
+    }
+
+    function renderUnits() {
+      // Remove old units
+      document.querySelectorAll('.unit-wrapper').forEach(el => el.remove());
+
+      const test = activeTest();
+      const empty = document.getElementById('empty-state');
+      if (!test || test.topics.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      const bf = document.getElementById('battlefield');
+      const bfRect = bf.getBoundingClientRect();
+      const cx = bfRect.width / 2;
+      const cy = bfRect.height / 2;
+
+      const topics = test.topics;
+      const total = topics.length;
+
+      topics.forEach((topic, i) => {
+        const angle = (i / total) * 2 * Math.PI - Math.PI / 2;
+        const dist = DIFFICULTY_DISTANCE[topic.difficulty] || 220;
+        const x = cx + Math.cos(angle) * dist;
+        const y = cy + Math.sin(angle) * dist;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `unit-wrapper state-${topic.state}`;
+        wrapper.dataset.id = topic.id;
+        wrapper.style.left = x + 'px';
+        wrapper.style.top = y + 'px';
+        wrapper.style.transform = `translate(-50%, -50%)`;
+
+        // Shape
+        let shape;
+        const shapeType = DIFFICULTY_SHAPE[topic.difficulty] || 'troop';
+
+        if (shapeType === 'troop') {
+          shape = document.createElement('div');
+          shape.className = 'unit-shape shape-troop';
+          for (let d = 0; d < 6; d++) {
+            const dot = document.createElement('span');
+            shape.appendChild(dot);
+          }
+        } else {
+          shape = document.createElement('div');
+          shape.className = `unit-shape shape-${shapeType}`;
+        }
+
+        // Rotate shape to face fortress using atan2
+        const dx = cx - x;
+        const dy = cy - y;
+        const faceDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+        shape.style.transform = `rotate(${faceDeg}deg)`;
+
+        // Label
+        const label = document.createElement('div');
+        label.className = 'unit-label';
+        label.textContent = topic.name.substring(0, 10);
+
+        wrapper.appendChild(shape);
+        wrapper.appendChild(label);
+
+        wrapper.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openPopup(topic.id, e);
+        });
+
+        bf.appendChild(wrapper);
+      });
+    }
+
+    // ─── POPUP ────────────────────────────────────────────────────────────────────
+    function openPopup(topicId, e) {
+      activeTopicId = topicId;
+      const test = activeTest();
+      if (!test) return;
+      const topic = test.topics.find(t => t.id === topicId);
+      if (!topic) return;
+
+      document.getElementById('pop-name').textContent = topic.name;
+      document.getElementById('pop-state').textContent = '◈ ' + topic.state.toUpperCase();
+
+      // Update button states based on current topic state
+      updatePopupButtonStates(topic.state);
+
+      const popup = document.getElementById('popup');
+      popup.classList.remove('hidden');
+
+      // Position near click, keep in viewport
+      let px = e.clientX + 12;
+      let py = e.clientY + 12;
+      const pw = 190, ph = 220;
+      if (px + pw > window.innerWidth - 10) px = e.clientX - pw - 12;
+      if (py + ph > window.innerHeight - 10) py = e.clientY - ph - 12;
+      popup.style.left = px + 'px';
+      popup.style.top = py + 'px';
+
+      playBeep(660, 0.08, 'sine');
+    }
+
+    function updatePopupButtonStates(state) {
+      const btnStart = document.getElementById('btn-start-study');
+      const btnMark = document.getElementById('btn-mark-study');
+      const btnTested = document.getElementById('btn-tested');
+      const btnRetreat = document.getElementById('btn-retreat');
+      const btnDelete = document.getElementById('btn-delete');
+
+      // Reset all
+      btnStart.disabled = true;
+      btnMark.disabled = true;
+      btnTested.disabled = true;
+      btnRetreat.disabled = true;
+      btnDelete.disabled = false; // Delete always enabled
+
+      // Enable based on state
+      if (state === 'unseen') {
+        btnStart.disabled = false;
+      } else if (state === 'engaged') {
+        btnMark.disabled = false;
+      } else if (state === 'damaged') {
+        btnTested.disabled = false;
+        btnRetreat.disabled = false;
+      }
+      // defeated: only delete enabled
+    }
+
+    function closePopup() {
+      document.getElementById('popup').classList.add('hidden');
+      activeTopicId = null;
+    }
+
+    // ─── STATE LOGIC ──────────────────────────────────────────────────────────────
+    function updateState(topicId, action) {
+      const test = activeTest();
+      if (!test) return;
+      const topic = test.topics.find(t => t.id === topicId);
+      if (!topic) return;
+
+      switch (action) {
+        case 'start':
+          if (topic.state === 'unseen') {
+            topic.state = 'engaged';
+            playBeep(440, 0.12, 'square');
+          }
+          break;
+
+        case 'mark':
+          if (topic.state === 'engaged') {
+            topic.state = 'damaged';
+            playBeep(520, 0.12, 'square');
+          }
+          break;
+
+        case 'tested':
+          showConfirm(topicId);
+          return; // Don't save/render yet
+
+        case 'retreat':
+          if (topic.state !== 'defeated') {
+            topic.state = 'damaged';
+            loseHp(10);
+            playWarning();
+          }
+          break;
+
+        case 'delete':
+          test.topics = test.topics.filter(t => t.id !== topicId);
+          playBeep(200, 0.2, 'sawtooth');
+          break;
+      }
+
+      saveData();
+      closePopup();
+      renderBattlefield();
+    }
+
+    function loseHp(amount) {
+      state.hp = Math.max(0, state.hp - amount);
+    }
+
+    function checkVictory() {
+      const test = activeTest();
+      if (!test) return false;
+      return test.topics.every(t => t.state === 'defeated');
+    }
+
+    function showVictoryOverlay() {
+      document.getElementById('victory-overlay').classList.remove('hidden');
+      playVictory();
+      setTimeout(() => {
+        document.getElementById('victory-overlay').classList.add('hidden');
+      }, 3000);
+    }
+
+    function showConfirm(topicId) {
+      closePopup();
+      const overlay = document.getElementById('confirm-overlay');
+      overlay.classList.remove('hidden');
+
+      document.getElementById('btn-confirm-yes').onclick = () => {
+        overlay.classList.add('hidden');
+        const test = activeTest();
+        const topic = test.topics.find(t => t.id === topicId);
+        if (topic) { topic.state = 'defeated'; }
+        saveData(); renderBattlefield();
+        if (checkVictory()) showVictoryOverlay();
+      };
+
+      document.getElementById('btn-confirm-no').onclick = () => {
+        overlay.classList.add('hidden');
+        const test = activeTest();
+        const topic = test.topics.find(t => t.id === topicId);
+        if (topic) { topic.state = 'damaged'; loseHp(15); playWarning(); }
+        saveData(); renderBattlefield();
+      };
+    }
+
+    // ─── NEW TEST ─────────────────────────────────────────────────────────────────
+    function showNewTestModal() {
+      document.getElementById('modal-test-name').value = '';
+      document.getElementById('modal-topics').value = '';
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      setTimeout(() => document.getElementById('modal-test-name').focus(), 50);
+    }
+
+    function createTest() {
+      const name = document.getElementById('modal-test-name').value.trim();
+      const raw = document.getElementById('modal-topics').value.trim();
+      if (!name || !raw) return;
+
+      const topics = raw.split('\n').map(line => {
+        line = line.trim();
+        if (!line) return null;
+        const match = line.match(/^(.+?)\s*[-–]\s*(Easy|Medium|Hard|Very Hard)$/i);
+        if (!match) return null;
+        const topicName = match[1].trim();
+        const diff = match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase();
+        const normalized = diff === 'Very hard' ? 'Very Hard' : diff;
+        return {
+          id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          name: topicName,
+          difficulty: normalized,
+          state: 'unseen'
+        };
+      }).filter(Boolean);
+
+      if (topics.length === 0) return;
+
+      const test = { name, topics };
+      state.tests.push(test);
+      state.activeTestIndex = state.tests.length - 1;
+      state.hp = 100;
+
+      document.getElementById('modal-overlay').classList.add('hidden');
+      saveData();
+      renderBattlefield();
+      updateDeleteTestButton();
+      playBeep(330, 0.2, 'sine');
+    }
+
+    function deleteCurrentTest() {
+      if (state.activeTestIndex < 0 || state.tests.length === 0) return;
+
+      state.tests.splice(state.activeTestIndex, 1);
+
+      if (state.tests.length > 0) {
+        state.activeTestIndex = Math.min(state.activeTestIndex, state.tests.length - 1);
+      } else {
+        state.activeTestIndex = -1;
+        state.hp = 100;
+      }
+
+      saveData();
+      renderBattlefield();
+      updateDeleteTestButton();
+      playBeep(200, 0.2, 'sawtooth');
+    }
+
+    function updateDeleteTestButton() {
+      const btn = document.getElementById('btn-delete-test');
+      btn.disabled = state.tests.length === 0;
+    }
+
+    // ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
+    document.getElementById('btn-new-test').addEventListener('click', showNewTestModal);
+    document.getElementById('btn-modal-ok').addEventListener('click', createTest);
+    document.getElementById('btn-modal-cancel').addEventListener('click', () => {
+      document.getElementById('modal-overlay').classList.add('hidden');
+    });
+
+    document.getElementById('btn-start-study').addEventListener('click', () => updateState(activeTopicId, 'start'));
+    document.getElementById('btn-mark-study').addEventListener('click', () => updateState(activeTopicId, 'mark'));
+    document.getElementById('btn-tested').addEventListener('click', () => updateState(activeTopicId, 'tested'));
+    document.getElementById('btn-retreat').addEventListener('click', () => updateState(activeTopicId, 'retreat'));
+    document.getElementById('btn-delete').addEventListener('click', () => updateState(activeTopicId, 'delete'));
+
+    // Delete test button
+    document.getElementById('btn-delete-test').addEventListener('click', () => {
+      if (state.tests.length === 0) return;
+      const confirmMsg = 'Are you sure you want to delete this test?';
+      if (confirm(confirmMsg)) {
+        deleteCurrentTest();
+      }
+    });
+    const popup = document.getElementById('popup');
+    if (!popup.classList.contains('hidden') && !popup.contains(e.target)) {
+      closePopup();
+    }
+
+    // ESC to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closePopup();
+        document.getElementById('confirm-overlay').classList.add('hidden');
+        document.getElementById('modal-overlay').classList.add('hidden');
+      }
+    });
+
+    // Enter in modal
+    document.getElementById('modal-test-name').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('modal-topics').focus();
+    });
+
+    // Rerender on resize
+    window.addEventListener('resize', () => renderBattlefield());
+
+    // ─── INIT ─────────────────────────────────────────────────────────────────────
+    loadData();
+    updateDeleteTestButton();
+    renderBattlefield();
+  </script>
+</body>
+
+</html>
