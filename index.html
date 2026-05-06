@@ -148,6 +148,30 @@
       box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
     }
 
+    #btn-add-topic {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--fortress-glow);
+      background: transparent;
+      border: 1px solid rgba(0, 255, 136, 0.4);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    #btn-add-topic:hover {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--fortress-glow);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    }
+
+    #btn-add-topic:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     #topbar button:disabled {
       opacity: 0.4;
       cursor: not-allowed;
@@ -204,8 +228,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 180px;
-      height: 180px;
+      width: 135px;
+      height: 135px;
       border-radius: 50%;
       border: 2px solid var(--fortress-glow);
       box-shadow:
@@ -261,43 +285,45 @@
       pointer-events: none;
     }
 
-    /* Radar Sweep */
-    /* #radar-sweep {
+    /* ── RADAR SWEEP ─────────────────────────────────── */
+    #radar-sweep {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 180px;
-      height: 180px;
+      /* Match fortress size exactly */
+      width: 135px;
+      height: 135px;
       transform: translate(-50%, -50%);
+      border-radius: 50%;
       pointer-events: none;
       z-index: 9;
+      overflow: hidden;
       animation: radar-spin 4s linear infinite;
-    } */
+    }
 
-
-    /* STRAIGHT LINE */
-    /* #radar-sweep::after {
+    /* Fading trail — conic gradient behind the sweep line */
+    #radar-sweep::before {
       content: '';
       position: absolute;
-      top: 50%;
-      left: 50%;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg,
+          transparent 0deg,
+          transparent 240deg,
+          rgba(0, 255, 136, 0.06) 280deg,
+          rgba(0, 255, 136, 0.18) 355deg,
+          transparent 360deg);
+    }
 
-      width: 2px;
-      height: 90px;
+    @keyframes radar-spin {
+      from {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
 
-      background: linear-gradient(to top,
-          rgba(0, 255, 136, 0.8),
-          rgba(0, 255, 136, 0));
-
-      transform-origin: bottom center;
-      transform: translate(-50%, -100%);
-    } */
-
-    /* @keyframes radar-spin {
       to {
         transform: translate(-50%, -50%) rotate(360deg);
       }
-    } */
+    }
 
     /* ── ENEMY UNIT WRAPPER ──────────────────────────── */
     .unit-wrapper {
@@ -702,6 +728,20 @@
       display: none;
     }
 
+    #add-topic-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #add-topic-overlay.hidden {
+      display: none;
+    }
+
     #modal-box {
       background: #0d1520;
       border: 1px solid var(--popup-border);
@@ -928,6 +968,7 @@
     <div class="remaining">ENEMIES: <span id="remaining-count">0</span></div>
     <div class="spacer"></div>
     <button id="btn-delete-test" disabled>✕ DELETE TEST</button>
+    <button id="btn-add-topic">⊕ ADD TOPIC</button>
     <button id="btn-new-test">⊕ NEW TEST</button>
   </div>
 
@@ -1004,6 +1045,31 @@
       <div class="modal-btns">
         <button id="btn-modal-cancel">Cancel</button>
         <button id="btn-modal-ok">DEPLOY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD TOPIC MODAL -->
+  <div id="add-topic-overlay" class="hidden">
+    <div id="modal-box" style="width:340px;gap:12px;">
+      <h2>ADD TOPIC</h2>
+      <div>
+        <label>Topic Name</label>
+        <input type="text" id="add-topic-name" placeholder="e.g. Recursion" />
+      </div>
+      <div>
+        <label>Difficulty</label>
+        <select id="add-topic-diff"
+          style="font-family:var(--mono);font-size:11px;background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.2);color:var(--text);padding:8px 10px;outline:none;width:100%;">
+          <option value="Easy">Easy</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Hard">Hard</option>
+          <option value="Very Hard">Very Hard</option>
+        </select>
+      </div>
+      <div class="modal-btns">
+        <button id="btn-add-topic-cancel">Cancel</button>
+        <button id="btn-add-topic-ok">DEPLOY</button>
       </div>
     </div>
   </div>
@@ -1137,15 +1203,18 @@
       topics.forEach((topic, i) => {
         const angle = (i / total) * 2 * Math.PI - Math.PI / 2;
         const dist = DIFFICULTY_DISTANCE[topic.difficulty] || 220;
-        const x = cx + Math.cos(angle) * dist;
-        const y = cy + Math.sin(angle) * dist;
+        let x = cx + Math.cos(angle) * dist;
+        let y = cy + Math.sin(angle) * dist;
+        // Clamp so units never spawn outside visible area
+        x = Math.max(44, Math.min(bfRect.width - 44, x));
+        y = Math.max(44, Math.min(bfRect.height - 44, y));
 
         const wrapper = document.createElement('div');
         wrapper.className = `unit-wrapper state-${topic.state}`;
         wrapper.dataset.id = topic.id;
         wrapper.style.left = x + 'px';
         wrapper.style.top = y + 'px';
-        wrapper.style.transform = `translate(-50%, -50%)`;
+        // transform set below after computing faceDeg
 
         // Shape
         let shape;
@@ -1163,16 +1232,20 @@
           shape.className = `unit-shape shape-${shapeType}`;
         }
 
-        // Rotate shape to face fortress using atan2
+        // Rotate wrapper to face fortress center using atan2
+        // atan2(dy,dx) gives the angle from the unit pointing toward center
+        // shapes' natural "forward" direction is to the right (0deg in CSS)
         const dx = cx - x;
         const dy = cy - y;
         const faceDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-        shape.style.transform = `rotate(${faceDeg}deg)`;
+        wrapper.style.transform = `translate(-50%, -50%) rotate(${faceDeg}deg)`;
 
         // Label
         const label = document.createElement('div');
         label.className = 'unit-label';
-        label.textContent = topic.name.substring(0, 10);
+        label.textContent = topic.name.substring(0, 15);
+        // Counter-rotate label to keep it readable (upright)
+        label.style.transform = `rotate(${-faceDeg}deg)`;
 
         wrapper.appendChild(shape);
         wrapper.appendChild(label);
@@ -1320,6 +1393,7 @@
         const topic = test.topics.find(t => t.id === topicId);
         if (topic) { topic.state = 'defeated'; }
         saveData(); renderBattlefield();
+        playDefeated(); // distinct defeated sound
         if (checkVictory()) showVictoryOverlay();
       };
 
@@ -1330,6 +1404,54 @@
         if (topic) { topic.state = 'damaged'; loseHp(15); playWarning(); }
         saveData(); renderBattlefield();
       };
+    }
+
+    // ─── DEFEATED SOUND (distinct from regular victory) ───────────────────────────
+    function playDefeated() {
+      try {
+        const ctx = getCtx();
+        // Descending "enemy eliminated" tones
+        const notes = [880, 660, 440, 330];
+        notes.forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'square'; osc.frequency.value = f;
+          const t = ctx.currentTime + i * 0.09;
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+          osc.start(t); osc.stop(t + 0.15);
+        });
+      } catch (e) { }
+    }
+
+    // ─── ADD TOPIC ────────────────────────────────────────────────────────────────
+    function showAddTopicModal() {
+      const test = activeTest();
+      if (!test) return; // no active test
+      document.getElementById('add-topic-name').value = '';
+      document.getElementById('add-topic-diff').value = 'Medium';
+      document.getElementById('add-topic-overlay').classList.remove('hidden');
+      setTimeout(() => document.getElementById('add-topic-name').focus(), 50);
+    }
+
+    function addTopic() {
+      const test = activeTest();
+      if (!test) return;
+      const name = document.getElementById('add-topic-name').value.trim();
+      const difficulty = document.getElementById('add-topic-diff').value;
+      if (!name) return;
+      const newTopic = {
+        id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        name,
+        difficulty,
+        state: 'unseen'
+      };
+      test.topics.push(newTopic);
+      document.getElementById('add-topic-overlay').classList.add('hidden');
+      saveData();
+      renderBattlefield();
+      playBeep(330, 0.18, 'sine');
     }
 
     // ─── NEW TEST ─────────────────────────────────────────────────────────────────
@@ -1400,6 +1522,11 @@
 
     // ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
     document.getElementById('btn-new-test').addEventListener('click', showNewTestModal);
+    document.getElementById('btn-add-topic').addEventListener('click', showAddTopicModal);
+    document.getElementById('btn-add-topic-ok').addEventListener('click', addTopic);
+    document.getElementById('btn-add-topic-cancel').addEventListener('click', () => {
+      document.getElementById('add-topic-overlay').classList.add('hidden');
+    });
     document.getElementById('btn-modal-ok').addEventListener('click', createTest);
     document.getElementById('btn-modal-cancel').addEventListener('click', () => {
       document.getElementById('modal-overlay').classList.add('hidden');
@@ -1419,10 +1546,14 @@
         deleteCurrentTest();
       }
     });
-    const popup = document.getElementById('popup');
-    if (!popup.classList.contains('hidden') && !popup.contains(e.target)) {
-      closePopup();
-    }
+    // Close popup when clicking outside it or any unit
+    document.addEventListener('click', (e) => {
+      const popup = document.getElementById('popup');
+      if (popup.classList.contains('hidden')) return;
+      if (!popup.contains(e.target) && !e.target.closest('.unit-wrapper')) {
+        closePopup();
+      }
+    });
 
     // ESC to close
     document.addEventListener('keydown', (e) => {
